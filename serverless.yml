@@ -1,0 +1,66 @@
+service: genomik-admon-custumer-sls
+#app: Genomi-K_API
+#org: 'GENOMI-K, S.A.P.I. de C.V.'
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  runtime: nodejs16.x
+  region: us-east-1
+  versionFunctions: false
+  memorySize: 256
+  timeout: 30
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    shouldStartNameWithService: true
+
+  iamRoleStatements:
+  #iam.role.statements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: "*"
+
+  iam:
+    role: arn:aws:iam::792020321184:role/gk-lambdas
+
+  vpc:
+    securityGroupIds:
+      - 'sg-0f26f467adff625bd'
+    subnetIds:
+      - 'subnet-0b7f5046'
+      - 'subnet-22158944'
+
+
+  environment:
+    stage: ${self:provider.stage}
+
+# ENDPOINTS ROUTING
+functions:
+
+
+  getDefault:
+    handler: src/controllers/DefaultController.getDefault
+    events:
+      - http:
+          path: api/v1/default
+          method: get
+          cors: true
+          integration: lambda
+          
+custom:
+  tracing: true
+
+plugins:
+  - serverless-offline
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,46 @@
+{
+    "name": "genomik-commons-sls",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "dependencies": {
+        "jwt-decode": "^3.1.2",
+        "mimemessage": "^1.0.5",
+        "mssql": "^6.3.2",
+        "request": "^2.88.2",
+        "sanitize": "^2.1.2",
+        "serverless": "^3.27.0",
+        "xml-js": "^1.6.11"
+    },
+    "devDependencies": {
+        "serverless-domain-manager": "^5.1.0",
+        "serverless-import-config-plugin": "^0.1.3",
+        "serverless-offline": "^12.0.4"
+    },
+    "scripts": {
+        "lint": "eslint src/**/*.js --fix",
+        "test": "sls invoke test",
+        "coverage": "nyc sls invoke test",
+        "integration": "sls invoke test",
+        "integration-aws": "NODE_ENV=qa jest ./__tests__/integration/*.js",
+        "dev": "sls offline start --skipCacheInvalidation",
+        "remove-qa": "serverless remove --stage qa -v",
+        "remove-prod": "serverless remove --stage prod -v",
+        "deploy-qa": "sls deploy --stage qa",
+        "deploy-dev": "sls deploy --stage dev",
+        "deploy-prod": "sls deploy --stage $Env",
+        "deploy-domain-qa": "sls create_domain --stage $Env && sls deploy --stage $Env && npm run integration-aws NODE_ENV=$Env",
+        "deploy-domain-dev": "sls create_domain --stage $Env && sls deploy --stage $Env",
+        "deploy-domain-prod": "sls create_domain --stage $Env && sls deploy --stage $Env"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/GenomiK/genomik-commons-sls.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/GenomiK/genomik-commons-sls/issues"
+    },
+    "homepage": "https://github.com/GenomiK/genomik-commons-sls#readme"
+}
