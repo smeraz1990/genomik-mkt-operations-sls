@@ -232,5 +232,25 @@ Utils.readXML = (options) => {
 
 }
 
+Utils.getUsuarioSessionId = (authorizationToken) => {
+    try{
+        const authToken = authorizationToken.replace("Bearer ","");
+        const decoded = jwtDecode(authToken);
+        return parseInt(decoded['custom:SQL_Id']);
+    } catch(err) {
+        return 6;//usuario sistema gk
+    }
+}
+
+Utils.getNivelSessionId = (authorizationToken) => {
+    try {
+        const authToken = authorizationToken.replace("Bearer ", "");
+        const decoded = jwtDecode(authToken);
+        return decoded['custom:SQL_Id'];
+    } catch (err) {
+        return -1;
+    }
+}
+
 
 module.exports = Utils;
