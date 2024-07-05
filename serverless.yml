@@ -49,6 +49,18 @@ functions:
           method: get
           cors: true
           integration: lambda
+  
+  getDatosSolicitudes:
+    handler: src/controllers/SolicitudMaterialesController.getSolicitudes
+    events:
+      - http:
+          path: api/v1/comercial/getSolicitudes
+          method: post
+          cors: true
+          integration: lambda
+          authorizer:
+            name: authorizer
+            arn: arn:aws:cognito-idp:us-east-1:792020321184:userpool/us-east-1_1TYtOrndD
           
 custom:
   tracing: true
