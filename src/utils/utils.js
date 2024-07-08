@@ -231,6 +231,35 @@ Utils.readXML = (options) => {
     }
 
 }
+Utils.getInstituciones = () => {
+    try {
+
+        return new Promise((resolve, reject) => {
+            const params = {
+                FunctionName: 'genomik-commons-sls-' + STAGE + '-listInstituciones', // the lambda function we are going to invoke
+                InvocationType: 'RequestResponse',
+                LogType: 'Tail',
+                Payload: '{ "body": {"InstitucionID": 1}}'
+            };
+            lambda.invoke(params, (err, data) => {
+                if (err) {
+                    console.error("❌ ERROR gRPC: ", err);
+                    reject(err)
+                } else {
+                    console.info("✅ RESPONSE: ", data);
+                    const body = JSON.parse(data.Payload)
+                    //console.log(body)
+                    resolve(body.data.dataresult)
+                }
+            });
+        });
+
+    } catch (e) {
+        console.error("❌ Error: ", e);
+    }
+}
+
+
 
 Utils.getUsuarioSessionId = (authorizationToken) => {
     try{
@@ -246,7 +275,7 @@ Utils.getNivelSessionId = (authorizationToken) => {
     try {
         const authToken = authorizationToken.replace("Bearer ", "");
         const decoded = jwtDecode(authToken);
-        return decoded['custom:SQL_Id'];
+        return decoded['custom:Nivel_Id'];
     } catch (err) {
         return -1;
     }
