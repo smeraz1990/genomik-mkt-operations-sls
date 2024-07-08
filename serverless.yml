@@ -51,7 +51,7 @@ functions:
           integration: lambda
   
   getDatosSolicitudes:
-    handler: src/controllers/SolicitudMaterialesController.getSolicitudes
+    handler: src/controllers/SolicitudMaterialesController.getParamsSolicitudes
     events:
       - http:
           path: api/v1/comercial/getSolicitudes

@@ -12,16 +12,68 @@ const { getSSM } = require('../config/const');
 const SolicitudMateriales = () => {};
 
 
-SolicitudMateriales.getSolicitudes = async(req, context, callback) => {
+SolicitudMateriales.getParamsSolicitudes = async(req, context, callback) => {
+
+    try {
+        let requestData = req.body;
+        //const usuarioSessionId = Utils.getUsuarioSessionId(req?.headers?.Authorization);
+        //const NivelSesionId = Utils.getNivelSessionId(req.headers.Authorization);
+        const usuarioSessionId = 1909;
+        const NivelSesionId = 1;
+        requestData.usuarioSessionId = usuarioSessionId
+        requestData.NivelSesionId = NivelSesionId
+        let BitInitCarga = requestData.BitInitCarga
+        let datosinstituciones = []
+        let UsuariosSolicitudes = []
+        let MaterialesSolicitudes = []
+        let data = {}
+        
+        let SolicitudesData = await getSolicitudes(requestData)
+        
+        if(BitInitCarga == 1)
+        {
+            datosinstituciones = await getInstituciones(requestData)
+            UsuariosSolicitudes = await getUsuariosSolicitudes(requestData)
+            MaterialesSolicitudes = await getMaterialesComunicacion(requestData)
+            data = {
+                "SolicitudData": SolicitudesData.data.SolicitudesData,
+                "InstitucionesData":datosinstituciones.data.InstitucionesData,
+                "UsuariosData":UsuariosSolicitudes.data.UsuariosData,
+                "MaterialesData":MaterialesSolicitudes.data.MaterialesData
+            }
+            
+        }
+        else
+        {
+            data= {
+                "SolicitudData": SolicitudesData.data.SolicitudesData,
+                "InstitucionesData":datosinstituciones,
+                "UsuariosData":UsuariosSolicitudes,
+                "MaterialesData":MaterialesSolicitudes
+            }
+        }
+        return {
+           
+            data: data
+        };
+    } catch (err) {
+        // Error running our SQL Query
+        console.error("ERROR: Exception thrown running SQL", err);
+        Utils.errorResponse(500, err.message, callback)
+    }
+    sql.on('error', err => console.error(err, "ERROR: Error raised in MSSQL utility"));
+}
+
+getSolicitudes = async(req, context, callback) => {
+    console.log("datos para enviar",req)
 
     try {
         const getConfig = await getSSM();
-        let requestData = req.body;
-        let bitEspecialista = requestData.bitEspecialista
+        let requestData = req;
         let estatus_id = '1,2,3'
         let bitCreador = requestData.bitCreador
-        const usuarioSessionId = Utils.getUsuarioSessionId(req?.headers?.Authorization);
-        const NivelSesionId = Utils.getNivelSessionId(req.headers.Authorization);
+        const usuarioSessionId = requestData.usuarioSessionId;
+        const NivelSesionId = requestData.NivelSesionId;
         const ListAdmin = [3521,2016,1948]
         let Bit_Sol_Mat_Cancel = requestData.Bit_Sol_Mat_Cancel || ""
         let Material_Comunicacion_Id = requestData.Material_Comunicacion_Id || null
@@ -36,7 +88,7 @@ SolicitudMateriales.getSolicitudes = async(req, context, callback) => {
         let txtQuerySolicitudes = ""
         console.log("creador", bitCreador)
         console.log("creador", ListAdmin.indexOf(usuarioSessionId))
-        if (bitCreador !== "" && (ListAdmin.indexOf(usuarioSessionId) == -1 /*&& NivelSesionId !== 1*/))
+        if (bitCreador !== "" && (ListAdmin.indexOf(usuarioSessionId) == -1 && NivelSesionId !== 1))
         {
     
            
@@ -136,17 +188,18 @@ SolicitudMateriales.getSolicitudes = async(req, context, callback) => {
 			smc.bit_impresion
         `;
 
-        console.log("Mostart INFO QUERY ", sqlQuerySolicitudes)
+        //console.log("Mostart INFO QUERY ", sqlQuerySolicitudes)
 
-        let result = await pool.request().query(sqlQuerySolicitudes);
-
+        let result = await pool.request().query(sqlQuerySolicitudes);     
         // Close DB Connection
         pool.close();
-        console.info("✅ ITEMS:", result.recordset);
+       
+        //console.info("✅ ITEMS:", result.recordset);
 
         return {
-            status: "success",
-            data: result.recordset
+            data: {
+                "SolicitudesData":result.recordset
+            }       
         };
     } catch (err) {
         // Error running our SQL Query
@@ -155,6 +208,134 @@ SolicitudMateriales.getSolicitudes = async(req, context, callback) => {
     }
     sql.on('error', err => console.error(err, "ERROR: Error raised in MSSQL utility"));
 }
+
+getInstituciones = async(req, context, callback) => {
+
+    try {
+        let requestData = req;
+        const usuarioSessionId = requestData.usuarioSessionId;
+        const NivelSesionId = requestData.NivelSesionId;
+        const ListAdmin = [3521,2016,1948]
+        let datosinstituciones = await Utils.getInstituciones()
+        if (ListAdmin.indexOf(usuarioSessionId) == -1 && NivelSesionId !== 1)
+        {
+            if (usuarioSessionId == 1202)
+                {
+                    usuarioSessionId = 2256 
+                }
+                datosinstituciones = datosinstituciones.filter((item) => (item.Usuario_id == usuarioSessionId || item.Responsable_id == usuarioSessionId))
+        }
+        
+        return {
+           
+            data: {
+                "InstitucionesData":datosinstituciones
+            }
+        };
+    } catch (err) {
+        // Error running our SQL Query
+        console.error("ERROR: Exception thrown running SQL", err);
+        Utils.errorResponse(500, err.message, callback)
+    }
+    sql.on('error', err => console.error(err, "ERROR: Error raised in MSSQL utility"));
+}
+
+getUsuariosSolicitudes = async(req, context, callback) => {
+    try {
+        const getConfig = await getSSM();
+        let requestData = req;
+        const usuarioSessionId = requestData.usuarioSessionId;
+        const NivelSesionId = requestData.NivelSesionId;
+        const ListAdmin = [3521,2016,1948]
+        
+        let txtQueryUsuario = ""
+       
+        if (ListAdmin.indexOf(usuarioSessionId) == -1 && NivelSesionId !== 1)
+        {    
+           
+            txtQueryUsuario += `and usuario_id = ${usuarioSessionId}`
+        }
+        else
+        {
+            txtQueryUsuario += `and (nivel_id = 18 or usuario_id in(6,1916))`
+        }
+              
+      
+        // Open DB Connection
+        let pool = await sql.connect(getConfig)
+
+        const sqlQueryUsuarios = `
+            SELECT usuario_id as id, f_nombre as usuario 
+				FROM usuario
+				WHERE 1=1
+					${txtQueryUsuario}
+					and activo = 1
+				order by f_nombre
+        `;
+
+        //console.log("Mostart INFO QUERY ", sqlQuerySolicitudes)
+
+        let result = await pool.request().query(sqlQueryUsuarios);     
+        // Close DB Connection
+        pool.close();
+       
+        //console.info("✅ ITEMS:", result.recordset);
+
+        return {
+            data: {
+                "UsuariosData":result.recordset
+            }       
+        };
+    } catch (err) {
+        // Error running our SQL Query
+        console.error("ERROR: Exception thrown running SQL", err);
+        Utils.errorResponse(500, err.message, callback)
+    }
+    sql.on('error', err => console.error(err, "ERROR: Error raised in MSSQL utility"));
+}
+
+getMaterialesComunicacion = async(req, context, callback) => {
+    try {
+        const getConfig = await getSSM();
+        // Open DB Connection
+        let pool = await sql.connect(getConfig)
+
+        const sqlQueryMateriales = `
+            SELECT 
+					Material_Comunicacion_Id,
+					Material,
+					Uso_Material_Id,
+					Activo,
+                    Cantidad_inventario,
+                    bit_Impresion,
+					orden
+			FROM CO_Materiales_Comunicacion
+			WHERE 1 = 1 AND  Activo = 1
+            order by orden
+        `;
+
+        //console.log("Mostart INFO QUERY ", sqlQuerySolicitudes)
+
+        let result = await pool.request().query(sqlQueryMateriales);     
+        // Close DB Connection
+        pool.close();
+       
+        //console.info("✅ ITEMS:", result.recordset);
+
+        return {
+            data: {
+                "MaterialesData":result.recordset
+            }       
+        };
+    } catch (err) {
+        // Error running our SQL Query
+        console.error("ERROR: Exception thrown running SQL", err);
+        Utils.errorResponse(500, err.message, callback)
+    }
+    sql.on('error', err => console.error(err, "ERROR: Error raised in MSSQL utility"));
+}
+
+
 
 
 
